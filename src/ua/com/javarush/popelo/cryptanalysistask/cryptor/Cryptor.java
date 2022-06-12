@@ -3,7 +3,9 @@ package ua.com.javarush.popelo.cryptanalysistask.cryptor;
 import ua.com.javarush.popelo.cryptanalysistask.vocabulary.Vocabulary;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class Cryptor {
@@ -16,22 +18,46 @@ public class Cryptor {
     private static char[] originalString;
     private BufferedWriter writer;
 
-    private static final String FILE_IN = "in.txt";
-    private static final String FILE_OUT = "out.txt";
-    private static final String DIR = System.getProperty("user.dir") + "/result/";
+    private static final String RESULT_DIRECTORY = System.getProperty("user.dir") + "/result/";
+    private static final String FILE_INPUT = RESULT_DIRECTORY + "in.txt";
+    private static final String FILE_OUTPUT = RESULT_DIRECTORY + "out.txt";
+
 
     private static final List<Character> ALPHABET_SYMBOLS = Arrays.asList('.', ',', ':', '!', '?', ' ', '1', '2', '3',
             '4', '5', '6', '7', '8', '9', '0', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '=', '+', '{', '}', '"',
             '\'', ';', '\\', '/', '~', '`');
 
     /**
-     * @throws Exception
+     *
      */
-    public Cryptor() throws Exception {
-        BufferedReader reader = new BufferedReader(new FileReader(new File(DIR + FILE_IN)));
-        writer = new BufferedWriter(new FileWriter(new File(DIR + FILE_OUT)));
+    public Cryptor() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(new File(FILE_INPUT)))) {
+            originalString = reader
+                    .lines()
+                    .collect(Collectors.joining(System.lineSeparator()))
+                    .toLowerCase()
+                    .toCharArray();
 
-        originalString = reader.lines().collect(Collectors.joining(System.lineSeparator())).toLowerCase().toCharArray();
+        } catch (IOException e) {
+            throw new RuntimeException("Can't open input file with path: " + FILE_INPUT, e);
+        }
+
+        try {
+            writer = new BufferedWriter(new FileWriter(new File(FILE_OUTPUT)));
+
+        } catch (IOException e) {
+            throw new RuntimeException("Can't open output file: " + FILE_OUTPUT, e);
+
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+
+                } catch (IOException e2) {
+                    throw new RuntimeException("Can't close output file: " + FILE_OUTPUT, e2);
+                }
+            }
+        }
 
         initVocabulary();
     }
@@ -40,28 +66,21 @@ public class Cryptor {
      *
      */
     public void encryptData() {
-        String result = this.encrypt();
-
-        saveResult(result);
+        saveToFile(this.encrypt());
     }
 
     /**
      *
      */
     public void decryptData() {
-        String result = this.decrypt();
-
-        saveResult(result);
+        saveToFile(this.decrypt());
     }
 
     public void bruteForceData() {
-        String result = this.bruteForce();
-
-        saveResult(result);
+        saveToFile(this.bruteForce());
     }
 
     /**
-     *
      * @return
      */
     public int getMaxShift() {
@@ -70,62 +89,71 @@ public class Cryptor {
 
     /**
      *
+     * @param alphabet
      * @return
      */
-    private String encrypt() {
-        char[] encryptedString = new char[originalString.length];
+    private String encryptionAndDecryption(List<Character> alphabet) {
+        char[] result = new char[originalString.length];
 
         for (int i = 0; i < originalString.length; i++) {
-            int originalIndex = sourceAlphabet.indexOf(originalString[i]);
+            int index = alphabet.indexOf(originalString[i]);
 
-            encryptedString[i] = originalIndex > -1 ? shiftedAlphabet.get(originalIndex) : originalString[i];
+            result[i] = index > -1 ? alphabet.get(index) : originalString[i];
         }
 
-        return String.valueOf(encryptedString);
+        return String.valueOf(result);
     }
 
     /**
-     * @throws Exception
+     * @return
+     */
+    private String encrypt() {
+        return encryptionAndDecryption(sourceAlphabet);
+    }
+
+    /**
+     * @return
      */
     private String decrypt() {
-        char[] decryptedString = new char[originalString.length];
-
-        for (int i = 0; i < originalString.length; i++) {
-            int shiftedIndex = shiftedAlphabet.indexOf(originalString[i]);
-
-            decryptedString[i] = shiftedIndex > -1 ? sourceAlphabet.get(shiftedIndex) : originalString[i];
-        }
-
-        return String.valueOf(decryptedString);
+        return encryptionAndDecryption(shiftedAlphabet);
     }
 
     /**
      *
+     * @param words
+     * @return
+     */
+    private int getPopularWordsMatchesCount(String[] words) {
+        List<String> popularWords = vocabulary.getPopularWords();
+        int[] counts = new int[sourceAlphabet.size()];
+        int count = 0;
+
+        for (String word : words) {
+            word = word.trim();
+
+            if (word.length() < 1 || !popularWords.contains(word)) {
+                continue;
+            }
+
+            count++;
+        }
+
+        return count;
+    }
+
+    /**
      * @return
      */
     private String bruteForce() {
-        List<String> popularWords = vocabulary.getPopularWords();
         int[] counts = new int[sourceAlphabet.size()];
+        String[] words;
 
         for (int i = 0; i < sourceAlphabet.size(); i++) {
-            try {
-                this.setShift(i);
+            this.setShift(i);
 
-                String decrypted = this.decrypt();
-                String[] words = decrypted.split("([\\s]+)");
+            words = this.decrypt().split("([\\s]+)");
 
-                for (String word: words) {
-                    word = word.trim();
-
-                    if (word.length() < 1 || !popularWords.contains(word)) {
-                        continue;
-                    }
-
-                    counts[i] += 1;
-                }
-
-            } catch (Exception ex) {
-            }
+            counts[i] = getPopularWordsMatchesCount(words);
         }
 
         int index = 0;
@@ -138,17 +166,13 @@ public class Cryptor {
         }
 
         String decryptedString = "";
-        try {
-            this.setShift(index);
-            decryptedString = this.decrypt();
 
-            writer.write(decryptedString);
-            writer.flush();
+        this.setShift(index);
+        decryptedString = this.decrypt();
 
-        } catch (Exception ex) {
-        }
+        saveToFile(decryptedString);
 
-        return String.valueOf(decryptedString);
+        return decryptedString;
     }
 
     /**
@@ -159,14 +183,10 @@ public class Cryptor {
         Vocabulary vocabulary = null;
 
         for (char symbol : originalString) {
-            try {
-                vocabulary = Vocabulary.getVocabulary(symbol);
+            vocabulary = Vocabulary.getVocabulary(symbol);
 
-                if (vocabulary != null) {
-                    break;
-                }
-
-            } catch (Exception ex) {
+            if (vocabulary != null) {
+                break;
             }
         }
 
@@ -175,11 +195,10 @@ public class Cryptor {
 
     /**
      * @param shift
-     * @throws Exception
      */
-    public void setShift(int shift) throws Exception {
+    public void setShift(int shift) {
         if (shift < 1 || shift > (sourceAlphabet.size())) {
-            throw new Exception("Incorrect shift value. Should be between 1 and " + sourceAlphabet.size() + " inclusive");
+            throw new RuntimeException("Incorrect shift value. Should be between 1 and " + sourceAlphabet.size() + " inclusive");
         }
 
         shiftedAlphabet.clear();
@@ -198,16 +217,23 @@ public class Cryptor {
     }
 
     /**
-     *
      * @param result
      */
-    private void saveResult(String result) {
+    private void saveToFile(String result) {
         try {
             writer.write(result);
             writer.flush();
 
-        } catch (Exception ex) {
+        } catch (IOException e) {
+            throw new RuntimeException("Can't write to file: " + FILE_OUTPUT, e);
 
+        } finally {
+            try {
+                writer.close();
+
+            } catch (IOException e2) {
+                throw new RuntimeException("Can't close output file: " + FILE_OUTPUT, e2);
+            }
         }
     }
 

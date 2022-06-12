@@ -5,6 +5,11 @@ import java.util.List;
 
 class EnVocabulary implements Vocabulary {
 
+    private static final int FIRST_UPPERCASE_LETTER_CODE = 65;
+    private static final int LAST_UPPERCASE_LETTER_CODE = 90;
+    private static final int FIRST_LOWERCASE_LETTER_CODE = 97;
+    private static final int LAST_LOWERCASE_LETTER_CODE = 122;
+
     @Override
     public List<Character> getAlphabet() {
         return Arrays.asList('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
@@ -28,7 +33,8 @@ class EnVocabulary implements Vocabulary {
 
     @Override
     public boolean isThisLanguage(char character) {
-        return ((character >= 65 && character <= 90) || (character >= 97 && character <= 122));
+        return ((FIRST_UPPERCASE_LETTER_CODE >= 65 && LAST_UPPERCASE_LETTER_CODE <= 90)
+                || (character >= FIRST_LOWERCASE_LETTER_CODE && character <= LAST_LOWERCASE_LETTER_CODE));
     }
 
 }

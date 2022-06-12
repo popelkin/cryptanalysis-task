@@ -15,32 +15,37 @@ public interface Vocabulary {
     List<Character> getAlphabet();
 
     /**
-     *
      * @return
      */
     List<String> getPopularWords();
 
     /**
-     *
      * @param character
      * @return
      */
     boolean isThisLanguage(char character);
 
     /**
-     *
      * @param code
      * @return
-     * @throws Exception
      */
-    static Vocabulary getVocabulary(char code) throws Exception {
+    static Vocabulary getVocabulary(char code) {
         Set<Class> classes = getImplementedClasses();
 
-        for (Class currentClass: classes) {
-            Vocabulary prospect = (Vocabulary) Vocabulary.class.getClassLoader().loadClass(currentClass.getName()).newInstance();
+        for (Class currentClass : classes) {
+            try {
+                Vocabulary prospect = (Vocabulary) Vocabulary
+                        .class
+                        .getClassLoader()
+                        .loadClass(currentClass.getName())
+                        .newInstance();
 
-            if (prospect.isThisLanguage(code)) {
-                return prospect;
+                if (prospect.isThisLanguage(code)) {
+                    return prospect;
+                }
+
+            } catch (Exception e) {
+                throw new RuntimeException("Can't load Vocabulary class", e);
             }
         }
 
@@ -48,7 +53,6 @@ public interface Vocabulary {
     }
 
     /**
-     *
      * @return
      */
     private static Set<Class> getImplementedClasses() {
@@ -57,7 +61,8 @@ public interface Vocabulary {
         try {
             packageName = Class.forName(Vocabulary.class.getName()).getPackageName();
 
-        } catch (ClassNotFoundException e) {
+        } catch (Exception e) {
+            throw new RuntimeException("Can't get package name", e);
         }
 
         InputStream stream = ClassLoader.getSystemClassLoader()
@@ -66,7 +71,11 @@ public interface Vocabulary {
         BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 
         String finalPackageName = packageName;
-        return reader.lines().filter(line -> line.endsWith("Vocabulary.class")).filter(line -> !line.equals("Vocabulary.class"))
+
+        return reader
+                .lines()
+                .filter(line -> line.endsWith("Vocabulary.class"))
+                .filter(line -> !line.equals("Vocabulary.class"))
                 .map(line -> getClass(line, finalPackageName))
                 .collect(Collectors.toSet());
     }
@@ -77,14 +86,14 @@ public interface Vocabulary {
      * @return
      */
     private static Class getClass(String className, String packageName) {
+        String name = packageName + "." + className.substring(0, className.lastIndexOf('.'));
+
         try {
-            return Class.forName(packageName + "." + className.substring(0, className.lastIndexOf('.')));
+            return Class.forName(name);
 
-        } catch (ClassNotFoundException e) {
-
+        } catch (Exception e) {
+            throw new RuntimeException("Can't get load class: " + name, e);
         }
-
-        return null;
     }
 
 }

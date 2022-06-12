@@ -5,6 +5,9 @@ import java.util.List;
 
 class RuVocabulary implements Vocabulary {
 
+    private static final int FIRST_LETTER_CODE = 1040;
+    private static final int LAST_LETTER_CODE = 1105;
+
     @Override
     public List<Character> getAlphabet() {
         return Arrays.asList('а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с',
@@ -28,7 +31,7 @@ class RuVocabulary implements Vocabulary {
 
     @Override
     public boolean isThisLanguage(char character) {
-        return (character >= 1040 && character <= 1105);
+        return (character >= FIRST_LETTER_CODE && character <= LAST_LETTER_CODE);
     }
 
 

@@ -6,9 +6,6 @@ import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class Main {
-    /**
-     *
-     */
     private static final String[] MENU = {
         "1 - Encrypt",
         "2 - Decrypt",
@@ -50,7 +47,7 @@ public class Main {
             int option = scanner.nextInt();
 
             if (option < 1 || option > MENU.length) {
-                throw new InputMismatchException();
+                throw new InputMismatchException("Incorrect menu item number");
             }
 
             Cryptor cryptor = new Cryptor();

@@ -13,6 +13,8 @@ public class Main {
         "4 - Exit",
     };
 
+    private static final Cryptor CRYPTOR = new Cryptor();
+
     /**
      *
      * @param args
@@ -50,24 +52,21 @@ public class Main {
                 throw new InputMismatchException("Incorrect menu item number");
             }
 
-            Cryptor cryptor = new Cryptor();
-            int maxShift = cryptor.getMaxShift();
+            int maxShift = CRYPTOR.getMaxShift();
 
             switch (option) {
                 case 1:
                     System.out.println("Inter the shift value. From 1 to " + maxShift);
-                    cryptor.setShift(scanner.nextInt());
-                    cryptor.encryptData();
+                    encrypt(scanner.nextInt());
                     System.out.println("Encrypted.");
                     break;
                 case 2:
                     System.out.println("Inter the shift value. From 1 to " + maxShift);
-                    cryptor.setShift(scanner.nextInt());
-                    cryptor.decryptData();
+                    decrypt(scanner.nextInt());
                     System.out.println("Decrypted.");
                     break;
                 case 3:
-                    cryptor.bruteForceData();
+                    CRYPTOR.bruteForceData();
                     System.out.println("Decrypted.");
                     break;
                 case 4:
@@ -80,6 +79,16 @@ public class Main {
             System.out.println("Wrong value. Exit.");
             System.exit(0);
         }
+    }
+
+    private static void encrypt(int shift) {
+        CRYPTOR.setShift(shift);
+        CRYPTOR.encryptData();
+    }
+
+    private static void decrypt(int shift) {
+        CRYPTOR.setShift(shift);
+        CRYPTOR.decryptData();
     }
 
     /**
